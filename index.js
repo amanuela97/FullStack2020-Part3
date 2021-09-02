@@ -39,7 +39,7 @@ app.post('/api/persons', (req,res,next) => {
 
   contact
     .save()
-    .then( savedContact => savedContact)
+    .then( savedContact => savedContact.toJSON())
     .then(formattedContact => res.json(formattedContact))
     .catch((error) => next(error))
 })
@@ -67,7 +67,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
-  const { name, number } = req.body
+  const { name ,number } = req.body
   const contact = {
     name:name,
     number:number
