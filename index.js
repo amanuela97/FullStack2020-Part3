@@ -1,6 +1,8 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const Contact = require('./model/contact.js')
 const app = express()
 const port = process.env.PORT || 3001
 
@@ -15,35 +17,11 @@ morgan.token('data', function (req, _) {
     }
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
-let persons = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
-const generateId = () => {
-    return Math.floor(Math.random() * 10000 * 1)
-}
 
 app.get('/api/persons', (_,res) => {
-    res.json(persons)
+    Contact.find({}).then((contacts) => {
+        res.json(contacts)
+    })
 })
 
 app.post('/api/persons', (req,res) => {
@@ -52,17 +30,16 @@ app.post('/api/persons', (req,res) => {
         return res.status(400).send({error: 'missing name value'})
     }else if(!body.number){
         return res.status(400).send({error:'missing number value'})
-    }else if(persons.some(person => person.name === body.name)){
-        return res.status(400).send({error:'name must be unique'})
     }
 
-    const person = {
-        id: generateId(),
+    const contact = new Contact({
         name: body.name,
         number: body.number,
-    }
-    persons = persons.concat(person)  
-    res.json(person)
+    }) 
+    
+    contact.save().then( savedContact => {
+        res.json(savedContact)
+    })
 })
 
 app.get('/info', (_,res) => {
@@ -90,7 +67,7 @@ app.delete('/api/persons/:id', (req,res) => {
     res.status(204).send('person successfully deleted :)')
 })
 
-app.listen(port, (req,res) => {
+app.listen(port, (_,__) => {
     console.log(`app is live on port number ${port}`)
 })
 
