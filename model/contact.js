@@ -3,13 +3,13 @@ const uniqueValidator = require('mongoose-unique-validator')
 
 const url = process.env.DB_URL
 
-const options = { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true, 
+const options = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 }
 mongoose.connect(url,options)
-.then((_) => console.log(`Successfully connected to database phonebook`))
-.catch((err) => console.log('DB error:',err.message))
+  .then((_) => console.log('Successfully connected to database phonebook'))
+  .catch((err) => console.log('DB error:',err.message))
 
 const contactSchema = new mongoose.Schema({
   name: {
@@ -27,12 +27,12 @@ const contactSchema = new mongoose.Schema({
 })
 
 contactSchema.set('toJSON', {
-    transform: (_, returnedObject) => {
-      returnedObject.id = returnedObject._id.toString()
-      delete returnedObject._id
-      delete returnedObject.__v
-    }
-  })
+  transform: (_, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
+})
 contactSchema.plugin(uniqueValidator, { message: '{VALUE} already exist, name must be unique' })
 const Contact = mongoose.model('Contact', contactSchema)
 
