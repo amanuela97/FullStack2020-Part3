@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 
 const url = process.env.DB_URL
 
@@ -11,8 +12,18 @@ mongoose.connect(url,options)
 .catch((err) => console.log('DB error:',err.message))
 
 const contactSchema = new mongoose.Schema({
-    name: String,
-    number: String
+  name: {
+    type: String,
+    minlength: [3, 'Name must have atleast 3 characters'],
+    unique: true,
+    uniqueCaseInsensitive: true,
+    required: 'name is required',
+  },
+  number: {
+    type: String,
+    minlength: [8, 'Number must have atleast 8 characters'],
+    required: 'number is required',
+  },
 })
 
 contactSchema.set('toJSON', {
@@ -22,7 +33,7 @@ contactSchema.set('toJSON', {
       delete returnedObject.__v
     }
   })
-
+contactSchema.plugin(uniqueValidator, { message: '{VALUE} already exist, name must be unique' })
 const Contact = mongoose.model('Contact', contactSchema)
 
 module.exports = Contact

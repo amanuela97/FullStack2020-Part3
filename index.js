@@ -24,7 +24,7 @@ app.get('/api/persons', (_,res) => {
     })
 })
 
-app.post('/api/persons', (req,res) => {
+app.post('/api/persons', (req,res,next) => {
     const body = req.body
     if(!body.name){
         return res.status(400).send({error: 'missing name value'})
@@ -37,19 +37,21 @@ app.post('/api/persons', (req,res) => {
         number: body.number,
     }) 
     
-    contact.save().then( savedContact => {
-        res.json(savedContact)
-    })
+    contact
+    .save()
+    .then( savedContact => savedContact)
+    .then(formattedContact => res.json(formattedContact))
+    .catch((error) => next(error))
 })
 
-app.get('/info', (_,res) => {
+app.get('/info', (_,res, next) => {
     Contact.find({}).countDocuments()
     .then((entries) =>{
         res.send(`
         <p>Phonebook has info for ${entries} people</p>
         <p>${new Date}</p>
         `)
-    }).catch((_) => console.log('error counting entries'))
+    }).catch((error) => next(error))
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -81,7 +83,7 @@ app.put('/api/persons/:id', (req, res, next) => {
       .catch((error) => next(error))
 })
 
-app.delete('/api/persons/:id', (req,res) => {
+app.delete('/api/persons/:id', (req,res, next) => {
     Contact.findByIdAndRemove(req.params.id)
     .then(_ => {
       res.status(204).end()
@@ -102,7 +104,9 @@ const errorHandler = (error, _, response, next) => {
   
     if (error.name === 'CastError') {
       return response.status(400).send({ error: 'malformatted id' })
-    } 
+    } else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
+    }
   
     next(error)
 }
