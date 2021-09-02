@@ -43,29 +43,72 @@ app.post('/api/persons', (req,res) => {
 })
 
 app.get('/info', (_,res) => {
-    const entries = persons.length
-    const message = `<p>Phonebook has info for ${entries} people</p>
-    <p>${new Date()}</p>`
-    res.send(message)
+    Contact.find({}).countDocuments()
+    .then((entries) =>{
+        res.send(`
+        <p>Phonebook has info for ${entries} people</p>
+        <p>${new Date}</p>
+        `)
+    }).catch((_) => console.log('error counting entries'))
 })
 
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
+app.get('/api/persons/:id', (req, res, next) => {
+    Contact.findById(req.params.id)
+    .then(contact => {
+      if (contact) {
+        res.json(contact)
+      } else {
+        res.status(404).end() 
+      }
+    })
+    .catch(error => next(error))
+})
 
-    if(person){
-        res.json(person)
-    }else{
-        res.status(404).send(`person with id ${id} not found :(`) 
+app.put('/api/persons/:id', (req, res, next) => {
+    const { name, number } = req.body
+    const contact = {
+        name:name,
+        number:number
     }
+    Contact.findByIdAndUpdate(req.params.id, contact, {new: true})
+      .then((updatedContact) => {
+        if (updatedContact) {
+            res.json(updatedContact)
+          } else {
+            res.status(404).end() 
+          }
+      })
+      .catch((error) => next(error))
 })
 
 app.delete('/api/persons/:id', (req,res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-    res.status(204).send('person successfully deleted :)')
+    Contact.findByIdAndRemove(req.params.id)
+    .then(_ => {
+      res.status(204).end()
+    })
+    .catch(error => next(error))
 })
+
+
+const unknownEndpoint = (_, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+  
+//middleware for unknown end points
+app.use(unknownEndpoint)
+
+const errorHandler = (error, _, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+  
+    next(error)
+}
+
+// middleware for result to errors
+app.use(errorHandler)
 
 app.listen(port, (_,__) => {
     console.log(`app is live on port number ${port}`)
